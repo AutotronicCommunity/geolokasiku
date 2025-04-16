@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera + GPS Detection</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    video {
+      width: 80%;
+      max-width: 600px;
+      border: 3px solid #fff;
+      margin-top: 20px;
+    }
+    #infoBox {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 150px;
+      height: 150px;
+      background-color: rgba(0, 0, 0, 0.7);
+      border: 2px solid white;
+      display: none;
+      padding: 5px;
+    }
+    #infoBox img {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Deteksi Lokasi + Kamera</h1>
+  <video id="video" autoplay playsinline></video>
+  <div id="infoBox">
+    <img id="infoImage" src="" alt="Info">
+  </div>
+
+  <script>
+    // Titik lokasi (contoh)
+    const locations = [
+      {name: "Posisi A", lat: --8.2241988, lon: 114.3744743, image: "https://uptdsmpn3bangkalan.sch.id/wp-content/uploads/2024/02/poster-pendidikan-membaca-buku.jpeg"},
+      {name: "Posisi B", lat: -6.201000, lon: 106.817000, image: "https://raw.githubusercontent.com/username/repo/main/imgB.png"},
+      {name: "Posisi C", lat: -6.202000, lon: 106.818000, image: "https://raw.githubusercontent.com/username/repo/main/imgC.png"},
+      {name: "Posisi D", lat: -6.203000, lon: 106.819000, image: "https://raw.githubusercontent.com/username/repo/main/imgD.png"},
+      {name: "Posisi E", lat: -6.204000, lon: 106.820000, image: "https://raw.githubusercontent.com/username/repo/main/imgE.png"},
+    ];
+
+    const video = document.getElementById('video');
+    const infoBox = document.getElementById('infoBox');
+    const infoImage = document.getElementById('infoImage');
+
+    // Fungsi hitung jarak antara dua titik GPS
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // meters
+      const φ1 = lat1 * Math.PI/180;
+      const φ2 = lat2 * Math.PI/180;
+      const Δφ = (lat2-lat1) * Math.PI/180;
+      const Δλ = (lon2-lon1) * Math.PI/180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      return R * c; // in meters
+    }
+
+    // Akses kamera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("Tidak bisa mengakses kamera: " + err);
+      });
+
+    // Akses lokasi GPS
+    function checkLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const { latitude, longitude } = position.coords;
+          console.log(`Lokasi: ${latitude}, ${longitude}`);
+
+          let found = false;
+
+          for (const loc of locations) {
+            const distance = getDistance(latitude, longitude, loc.lat, loc.lon);
+            console.log(`${loc.name}: ${distance.toFixed(2)} meter`);
+
+            if (distance <= 10) {
+              infoImage.src = loc.image;
+              infoBox.style.display = 'block';
+              found = true;
+              break;
+            }
+          }
+
+          if (!found) {
+            infoBox.style.display = 'none';
+          }
+        }, err => {
+          console.error("Gagal mendapatkan lokasi:", err);
+        });
+      } else {
+        alert("Browser tidak mendukung Geolocation");
+      }
+    }
+
+    // Cek lokasi setiap 10 detik
+    setInterval(checkLocation, 10000);
+    checkLocation(); // pertama kali
+  </script>
+</body>
+</html>
