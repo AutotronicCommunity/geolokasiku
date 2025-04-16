@@ -35,6 +35,15 @@
       width: 100%;
       height: auto;
     }
+    #statusText {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 90%;
+    }
   </style>
 </head>
 <body>
@@ -43,6 +52,7 @@
   <div id="infoBox">
     <img id="infoImage" src="" alt="Info">
   </div>
+  <div id="statusText">Mendeteksi lokasi...</div>
 
   <script>
     const locations = [
@@ -81,6 +91,7 @@
     const video = document.getElementById('video');
     const infoBox = document.getElementById('infoBox');
     const infoImage = document.getElementById('infoImage');
+    const statusText = document.getElementById('statusText');
 
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371e3;
@@ -96,7 +107,6 @@
       return R * c;
     }
 
-    // Kamera
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         video.srcObject = stream;
@@ -106,7 +116,6 @@
         console.error(err);
       });
 
-    // Lokasi
     function checkLocation() {
       if (!navigator.geolocation) {
         alert("Geolocation tidak didukung browser ini.");
@@ -116,32 +125,38 @@
       navigator.geolocation.getCurrentPosition(
         position => {
           const { latitude, longitude } = position.coords;
-          console.log(`Lokasi: ${latitude}, ${longitude}`);
 
-          let found = false;
+          let nearest = null;
+          let minDistance = Infinity;
+
           for (const loc of locations) {
             const distance = getDistance(latitude, longitude, loc.lat, loc.lon);
-            console.log(`${loc.name}: ${distance.toFixed(2)} m`);
-            if (distance <= 10) {
-              infoImage.src = loc.image;
-              infoBox.style.display = 'block';
-              found = true;
-              break;
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearest = loc;
             }
           }
 
-          if (!found) {
+          if (nearest && minDistance <= 10) {
+            infoImage.src = nearest.image;
+            infoBox.style.display = 'block';
+          } else {
             infoBox.style.display = 'none';
           }
+
+          statusText.innerHTML = `
+            <strong>Lokasi Saat Ini:</strong><br>
+            Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}<br>
+            <strong>Terdekat:</strong> ${nearest.name} (${minDistance.toFixed(2)} m)
+          `;
         },
         err => {
           console.error("Gagal mendapatkan lokasi:", err);
-          alert("Gagal akses lokasi: " + err.message);
+          statusText.innerText = "Gagal mendapatkan lokasi: " + err.message;
         }
       );
     }
 
-    // Cek lokasi tiap 10 detik
     setInterval(checkLocation, 10000);
     checkLocation();
   </script>
