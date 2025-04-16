@@ -2,51 +2,148 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Debug Kamera & Lokasi</title>
+  <title>Deteksi Lokasi + Kamera</title>
   <style>
-    body { margin: 0; font-family: sans-serif; }
-    video { width: 100vw; height: 100vh; object-fit: cover; }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    video {
+      width: 80%;
+      max-width: 600px;
+      border: 3px solid #fff;
+      margin-top: 20px;
+    }
+    #infoBox {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 150px;
+      height: 150px;
+      background-color: rgba(0, 0, 0, 0.7);
+      border: 2px solid white;
+      display: none;
+      padding: 5px;
+    }
+    #infoBox img {
+      width: 100%;
+      height: auto;
+    }
   </style>
 </head>
 <body>
+  <h1>Deteksi Lokasi + Kamera</h1>
+  <video id="video" autoplay playsinline muted></video>
+  <div id="infoBox">
+    <img id="infoImage" src="" alt="Info">
+  </div>
 
-<video id="video" autoplay playsinline></video>
+  <script>
+    const locations = [
+      {
+        name: "Posisi A",
+        lat: -8.2241988,
+        lon: 114.3744743,
+        image: "https://uptdsmpn3bangkalan.sch.id/wp-content/uploads/2024/02/poster-pendidikan-membaca-buku.jpeg"
+      },
+      {
+        name: "Posisi B",
+        lat: -6.201000,
+        lon: 106.817000,
+        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgB.png"
+      },
+      {
+        name: "Posisi C",
+        lat: -6.202000,
+        lon: 106.818000,
+        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgC.png"
+      },
+      {
+        name: "Posisi D",
+        lat: -6.203000,
+        lon: 106.819000,
+        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgD.png"
+      },
+      {
+        name: "Posisi E",
+        lat: -6.204000,
+        lon: 106.820000,
+        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgE.png"
+      },
+    ];
 
-<script>
-  alert("Memulai akses kamera...");
+    const video = document.getElementById('video');
+    const infoBox = document.getElementById('infoBox');
+    const infoImage = document.getElementById('infoImage');
 
-  const video = document.getElementById('video');
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    alert("Browser tidak mendukung getUserMedia.");
-  } else {
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Kamera
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
-        alert("Kamera berhasil diakses!");
         video.srcObject = stream;
       })
       .catch(err => {
-        alert("Gagal akses kamera: " + err.name);
-        console.error("Kamera error:", err);
+        alert("Tidak bisa mengakses kamera: " + err.message);
+        console.error(err);
       });
-  }
 
-  alert("Memulai akses lokasi...");
-
-  if (!navigator.geolocation) {
-    alert("Geolocation tidak didukung di browser ini.");
-  } else {
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        alert("Lokasi OK: " + pos.coords.latitude + ", " + pos.coords.longitude);
-      },
-      err => {
-        alert("Gagal akses lokasi: " + err.message);
-        console.error("Geolocation error:", err);
+    // Lokasi
+    function checkLocation() {
+      if (!navigator.geolocation) {
+        alert("Geolocation tidak didukung browser ini.");
+        return;
       }
-    );
-  }
-</script>
 
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const { latitude, longitude } = position.coords;
+          console.log(`Lokasi: ${latitude}, ${longitude}`);
+
+          let found = false;
+          for (const loc of locations) {
+            const distance = getDistance(latitude, longitude, loc.lat, loc.lon);
+            console.log(`${loc.name}: ${distance.toFixed(2)} m`);
+            if (distance <= 10) {
+              infoImage.src = loc.image;
+              infoBox.style.display = 'block';
+              found = true;
+              break;
+            }
+          }
+
+          if (!found) {
+            infoBox.style.display = 'none';
+          }
+        },
+        err => {
+          console.error("Gagal mendapatkan lokasi:", err);
+          alert("Gagal akses lokasi: " + err.message);
+        }
+      );
+    }
+
+    // Cek lokasi tiap 10 detik
+    setInterval(checkLocation, 10000);
+    checkLocation();
+  </script>
 </body>
 </html>
