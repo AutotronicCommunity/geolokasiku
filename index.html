@@ -44,10 +44,29 @@
       border-radius: 8px;
       max-width: 90%;
     }
+    #cameraButtons {
+      margin-top: 10px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      background-color: #333;
+      color: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #555;
+    }
   </style>
 </head>
 <body>
   <h1>Deteksi Lokasi + Kamera</h1>
+  <div id="cameraButtons">
+    <button onclick="startCamera('user')">Kamera Depan</button>
+    <button onclick="startCamera('environment')">Kamera Belakang</button>
+  </div>
   <video id="video" autoplay playsinline muted></video>
   <div id="infoBox">
     <img id="infoImage" src="" alt="Info">
@@ -58,8 +77,8 @@
     const locations = [
       {
         name: "Posisi A",
-        lat: -8.2241988,
-        lon: 114.3744743,
+        lat: -8.224140,
+        lon: 114.374953,
         image: "https://uptdsmpn3bangkalan.sch.id/wp-content/uploads/2024/02/poster-pendidikan-membaca-buku.jpeg"
       },
       {
@@ -85,13 +104,15 @@
         lat: -6.204000,
         lon: 106.820000,
         image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgE.png"
-      },
+      }
     ];
 
     const video = document.getElementById('video');
     const infoBox = document.getElementById('infoBox');
     const infoImage = document.getElementById('infoImage');
     const statusText = document.getElementById('statusText');
+
+    let currentStream = null;
 
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371e3;
@@ -107,14 +128,30 @@
       return R * c;
     }
 
-    navigator.mediaDevices.getUserMedia({ video: true })
+    function startCamera(facingMode) {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: facingMode } }
+      })
       .then(stream => {
+        currentStream = stream;
         video.srcObject = stream;
       })
       .catch(err => {
-        alert("Tidak bisa mengakses kamera: " + err.message);
-        console.error(err);
+        console.warn("Gagal akses kamera " + facingMode + ", fallback ke default");
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            currentStream = stream;
+            video.srcObject = stream;
+          })
+          .catch(err => {
+            alert("Tidak bisa mengakses kamera: " + err.message);
+          });
       });
+    }
 
     function checkLocation() {
       if (!navigator.geolocation) {
@@ -159,6 +196,7 @@
 
     setInterval(checkLocation, 10000);
     checkLocation();
+    startCamera('environment'); // Default kamera belakang saat load
   </script>
 </body>
 </html>
