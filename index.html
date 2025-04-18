@@ -1,226 +1,78 @@
 <!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Deteksi Lokasi + Kamera</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #111;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>AR GPS Model</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- A-Frame + AR.js + GPS -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://unpkg.com/aframe-gps-camera/dist/aframe-gps-camera.min.js"></script>
+    <script src="https://unpkg.com/aframe-gps-entity-place/dist/aframe-gps-entity-place.min.js"></script>
 
-    .videoWrapper {
-      position: relative;
-      width: 80%;
-      max-width: 600px;
-    }
-
-    #video {
-      width: 100%;
-      border: 3px solid #fff;
-      margin-top: 20px;
-    }
-
-    #infoBox {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 120px;
-      height: auto;
-      background-color: rgba(0, 0, 0, 0.6);
-      border: 2px solid white;
-      display: none;
-      padding: 5px;
-      z-index: 2;
-      text-align: center;
-    }
-
-    #infoBox img {
-      width: 100%;
-      height: auto;
-      margin-bottom: 5px;
-    }
-
-    #statusText {
-      margin-top: 15px;
-      text-align: center;
-      font-size: 14px;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 10px;
-      border-radius: 8px;
-      max-width: 90%;
-    }
-
-    #cameraButtons {
-      margin-top: 10px;
-    }
-
-    button {
-      margin: 5px;
-      padding: 10px 15px;
-      background-color: #333;
-      color: white;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #555;
-    }
-  </style>
-</head>
-<body>
-  <h1>Deteksi Lokasi + Kamera</h1>
-
-  <div id="cameraButtons">
-    <button onclick="startCamera('user')">Kamera Depan</button>
-    <button onclick="startCamera('environment')">Kamera Belakang</button>
-  </div>
-
-  <div class="videoWrapper">
-    <video id="video" autoplay playsinline muted></video>
-    <div id="infoBox">
-      <img id="infoImage" src="" alt="Info">
-      <div id="infoName"></div>
-    </div>
-  </div>
-
-  <div id="statusText">Mendeteksi lokasi...</div>
-
-  <script>
-    const locations = [
-      {
-        name: "Posisi A",
-        lat: -8.274140,
-        lon: 114.345953,
-        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgB.png"
-      },
-      {
-        name: "Posisi B",
-        lat: -6.201000,
-        lon: 106.817000,
-        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgB.png"
-      },
-      {
-        name: "Posisi C",
-        lat: -6.202000,
-        lon: 106.818000,
-        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgC.png"
-      },
-      {
-        name: "Posisi D",
-        lat: -6.203000,
-        lon: 106.819000,
-        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgD.png"
-      },
-      {
-        name: "Posisi E",
-        lat: -6.204000,
-        lon: 106.820000,
-        image: "https://raw.githubusercontent.com/AutotronicCommunity/geolokasiku/main/imgE.png"
+    <style>
+      body, html { margin: 0; padding: 0; overflow: hidden; }
+      #loading {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 10px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        font-family: sans-serif;
+        z-index: 10;
       }
-    ];
+    </style>
+  </head>
 
-    const video = document.getElementById('video');
-    const infoBox = document.getElementById('infoBox');
-    const infoImage = document.getElementById('infoImage');
-    const infoName = document.getElementById('infoName');
-    const statusText = document.getElementById('statusText');
-    let currentStream = null;
+  <body>
+    <div id="loading">📍 Mengambil lokasi GPS... Dekatkan ke titik koordinat -8.2241, 114.3749</div>
 
-    function getDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3;
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
+    <a-scene 
+      vr-mode-ui="enabled: false" 
+      embedded
+      arjs="sourceType: webcam; gpsMinAccuracy: 100; debugUIEnabled: false;"
+    >
+      <a-camera gps-camera rotation-reader></a-camera>
 
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
+      <!-- MODEL 3D AKTIF DI KOORDINAT INI -->
+      <a-entity
+        gps-entity-place="latitude: -8.2241; longitude: 114.3749;"
+        gltf-model="https://cdn.glitch.global/5a88fe2d-cf57-45e1-97c0-75860f1831f5/astronaut.glb?v=1684350441444"
+        scale="1 1 1"
+        rotation="0 180 0"
+        position="0 0 0"
+      ></a-entity>
+    </a-scene>
 
-    function startCamera(facingMode) {
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
-      }
-
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: facingMode } }
-      })
-      .then(stream => {
-        currentStream = stream;
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        console.warn("Gagal akses kamera " + facingMode + ", fallback ke default");
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => {
-            currentStream = stream;
-            video.srcObject = stream;
-          })
-          .catch(err => {
-            alert("Tidak bisa mengakses kamera: " + err.message);
-          });
+    <script>
+      // Debugging - Cek apakah kamera berhasil diinisialisasi
+      window.addEventListener('camera-init', () => {
+        console.log('✅ Kamera berhasil diinisialisasi.');
+        document.getElementById('loading').innerHTML = "📡 Kamera berhasil aktif! Menunggu lokasi GPS...";
       });
-    }
 
-    function checkLocation() {
-      if (!navigator.geolocation) {
-        alert("Geolocation tidak didukung browser ini.");
-        return;
-      }
+      // Debugging - Cek jika ada kesalahan akses kamera
+      window.addEventListener('camera-error', (error) => {
+        console.error('❌ Gagal mengakses kamera:', error);
+        alert("❌ Kamera tidak dapat diakses. Pastikan izin kamera diberikan di browser.");
+        document.getElementById('loading').innerHTML = "❌ Gagal mengakses kamera.";
+      });
 
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const { latitude, longitude } = position.coords;
+      // Update status saat posisi GPS diperbarui
+      window.addEventListener('gps-camera-update-position', (e) => {
+        const lat = e.detail.position.latitude.toFixed(5);
+        const lon = e.detail.position.longitude.toFixed(5);
+        console.log(`📍 Lokasi Anda diperbarui: Latitude: ${lat}, Longitude: ${lon}`);
+        document.getElementById('loading').innerHTML = `📍 Lokasi Anda: (${lat}, ${lon})`;
+      });
 
-          let nearest = null;
-          let minDistance = Infinity;
-
-          for (const loc of locations) {
-            const distance = getDistance(latitude, longitude, loc.lat, loc.lon);
-            if (distance < minDistance) {
-              minDistance = distance;
-              nearest = loc;
-            }
-          }
-
-          if (nearest && minDistance <= 10) {
-            infoImage.src = nearest.image;
-            infoName.textContent = nearest.name;
-            infoBox.style.display = 'block';
-          } else {
-            infoBox.style.display = 'none';
-          }
-
-          statusText.innerHTML = `
-            <strong>Lokasi Saat Ini:</strong><br>
-            Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}<br>
-            <strong>Terdekat:</strong> ${nearest.name} (${minDistance.toFixed(2)} m)
-          `;
-        },
-        err => {
-          console.error("Gagal mendapatkan lokasi:", err);
-          statusText.innerText = "Gagal mendapatkan lokasi: " + err.message;
-        }
-      );
-    }
-
-    // Mulai kamera belakang secara default
-    startCamera('environment');
-    // Cek lokasi setiap 10 detik
-    setInterval(checkLocation, 10000);
-    checkLocation();
-  </script>
-</body>
+      // Cek apakah GPS berhasil didapat
+      window.addEventListener('gps-camera-error', (error) => {
+        console.error('❌ Gagal mendapatkan lokasi GPS:', error);
+        document.getElementById('loading').innerHTML = "❌ Gagal mendapatkan lokasi GPS. Pastikan izin lokasi diberikan.";
+      });
+    </script>
+  </body>
 </html>
